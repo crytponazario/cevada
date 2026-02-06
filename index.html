@@ -112,7 +112,15 @@
   color: #d29a2a;
   margin-top: 5px;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
+#copySession {
+  font-size: 16px;
+  vertical-align: middle;
+}
+
 // Função para ler query params
 // ===== Função para ler parâmetros da URL =====
 function getQueryParam(name) {
@@ -147,7 +155,10 @@ document.getElementById("dataHoje").textContent = `${dia}-${mes}-${ano}`;
 <body>
 <h1 class="titulo">
   Mix Cevada <span>By GOAT</span> - <span id="dataHoje"></span>
-  <div id="sessionDisplay" class="session"></div>
+  <div id="sessionDisplay" class="session">
+  Session: <span id="sessionIdText"></span>
+  <button id="copySession" title="Copiar URL" style="border:none; background:none; cursor:pointer;">📋</button>
+</div>
 </h1>
 
 <h2>Equipas</h2>
@@ -335,7 +346,21 @@ if (!sessionId) {
 
   localStorage.setItem("sessionId", sessionId);
 }
+// mostra o sessionId
+document.getElementById("sessionIdText").textContent = sessionId;
 
+// adicionar funcionalidade de copiar
+document.getElementById("copySession").onclick = () => {
+  // URL completa com sessionId
+  const url = `${window.location.origin}${window.location.pathname}?session=${sessionId}`;
+
+  // copiar para o clipboard
+  navigator.clipboard.writeText(url).then(() => {
+    alert("URL copiada para a área de transferência!"); // opcional
+  }).catch(() => {
+    alert("Não foi possível copiar a URL.");
+  });
+};
 console.log("Session ID:", sessionId); // para debug
 
   /* ===== Restaurar nomes das equipas ===== */
