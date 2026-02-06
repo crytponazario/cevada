@@ -210,7 +210,7 @@ function shuffle(arr) {
 
 function sorteio() {
   const campos = ["Bar", "Meio", "Ponta"];
-  
+
   // Atualiza os nomes das equipas com Jogador1 - Jogador2
   teams = [];
   for (let i = 0; i < 6; i++) {
@@ -219,20 +219,9 @@ function sorteio() {
     teams.push(`${j1} - ${j2}`);
   }
 
-  /* ===== Limpa e recria tabela de jogos ===== */
-  document.getElementById("games").innerHTML = `
-    <tr>
-      <th>Campo</th>
-      <th>Equipa 1</th>
-      <th>Pts</th>
-      <th>Pts</th>
-      <th>Equipa 2</th>
-    </tr>
-  `;
-
   jogos = [];
 
-  // gerar todos os jogos
+  // gerar todos os jogos (todos contra todos)
   let todosJogos = [];
   for (let i = 0; i < teams.length; i++) {
     for (let j = i + 1; j < teams.length; j++) {
@@ -244,28 +233,56 @@ function sorteio() {
   todosJogos.sort(() => Math.random() - 0.5);
 
   let gameIndex = 0;
-  // 5 rounds de 3 jogos cada
+
+  // limpa div/table de jogos
+  const gamesDiv = document.getElementById("games");
+  gamesDiv.innerHTML = "";
+
+  // criar 5 jornadas
   for (let round = 1; round <= 5; round++) {
+    // Título da jornada
+    const roundTitle = document.createElement("h2");
+    roundTitle.textContent = `Jornada ${round}`;
+    roundTitle.style.color = "#6b3e26";
+    gamesDiv.appendChild(roundTitle);
+
+    // tabela da jornada
+    const table = document.createElement("table");
+
+    table.innerHTML = `
+      <tr>
+        <th>Campo</th>
+        <th>Equipa 1</th>
+        <th>Pts</th>
+        <th>Pts</th>
+        <th>Equipa 2</th>
+      </tr>
+    `;
+
     for (let c = 0; c < 3; c++) {
-      let jogo = todosJogos[gameIndex];
+      const jogo = todosJogos[gameIndex];
       jogos.push(jogo);
 
-      document.getElementById("games").innerHTML += `
-        <tr>
-          <td>${campos[c]}</td>
-          <td>${jogo[0]}</td>
-          <td><input type="number" id="a${gameIndex}" style="width:50px" oninput="guardarResultados()"></td>
-          <td><input type="number" id="b${gameIndex}" style="width:50px" oninput="guardarResultados()"></td>
-          <td>${jogo[1]}</td>
-        </tr>
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${campos[c]}</td>
+        <td>${jogo[0]}</td>
+        <td><input type="number" id="a${gameIndex}" style="width:50px" oninput="guardarResultados()"></td>
+        <td><input type="number" id="b${gameIndex}" style="width:50px" oninput="guardarResultados()"></td>
+        <td>${jogo[1]}</td>
       `;
+      table.appendChild(row);
+
       gameIndex++;
     }
+
+    gamesDiv.appendChild(table);
   }
 
-  // salvar jogos atualizados no localStorage
+  // salvar jogos no localStorage
   localStorage.setItem("jogos", JSON.stringify(jogos));
-};
+}
+
 function guardarEquipas() {
   let equipas = [];
 
