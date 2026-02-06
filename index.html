@@ -219,36 +219,30 @@ function sorteio() {
     teams.push(`${j1} - ${j2}`);
   }
 
-  jogos = [];
+  jogos = []; // reinicia os jogos
 
-  // gerar todos os jogos (todos contra todos)
-  let todosJogos = [];
-  for (let i = 0; i < teams.length; i++) {
-    for (let j = i + 1; j < teams.length; j++) {
-      todosJogos.push([teams[i], teams[j]]);
-    }
-  }
+  // Round-robin fixo para 6 equipas
+  const jornadas = [
+    [[0,1],[2,3],[4,5]], // Jornada 1
+    [[0,2],[1,5],[3,4]], // Jornada 2
+    [[0,3],[1,2],[4,5]], // Jornada 3
+    [[0,4],[1,3],[2,5]], // Jornada 4
+    [[0,5],[1,4],[2,3]], // Jornada 5
+  ];
 
-  // baralhar jogos
-  todosJogos.sort(() => Math.random() - 0.5);
-
-  let gameIndex = 0;
-
-  // limpa div/table de jogos
   const gamesDiv = document.getElementById("games");
   gamesDiv.innerHTML = "";
 
-  // criar 5 jornadas
-  for (let round = 1; round <= 5; round++) {
-    // Título da jornada
+  // controlar campos usados por cada equipe
+  let equipeCampos = Array.from({length:6}, ()=> new Set());
+
+  jornadas.forEach((jornada, roundIndex) => {
     const roundTitle = document.createElement("h2");
-    roundTitle.textContent = `Jornada ${round}`;
+    roundTitle.textContent = `Jornada ${roundIndex + 1}`;
     roundTitle.style.color = "#6b3e26";
     gamesDiv.appendChild(roundTitle);
 
-    // tabela da jornada
     const table = document.createElement("table");
-
     table.innerHTML = `
       <tr>
         <th>Campo</th>
@@ -259,29 +253,52 @@ function sorteio() {
       </tr>
     `;
 
-    for (let c = 0; c < 3; c++) {
-      const jogo = todosJogos[gameIndex];
+    // embaralhar ordem dos jogos na jornada
+    const shuffledJornada = jornada.sort(() => Math.random() - 0.5);
+
+    shuffledJornada.forEach((par, i) => {
+      let jogo = [teams[par[0]], teams[par[1]]];
+
+      // aleatoriamente trocar Equipa 1 e 2
+      if (Math.random() > 0.5) jogo = [jogo[1], jogo[0]];
+
+      // escolher campo garantindo que cada equipe jogue pelo menos uma vez em cada campo
+      let campoEscolhido;
+      for (let c of campos.sort(() => Math.random() - 0.5)) {
+        if (!equipeCampos[par[0]].has(c) && !equipeCampos[par[1]].has(c)) {
+          campoEscolhido = c;
+          equipeCampos[par[0]].add(c);
+          equipeCampos[par[1]].add(c);
+          break;
+        }
+      }
+      if (!campoEscolhido) {
+        // se todas já jogaram, escolhe aleatoriamente
+        campoEscolhido = campos[Math.floor(Math.random()*campos.length)];
+      }
+
       jogos.push(jogo);
 
       const row = document.createElement("tr");
       row.innerHTML = `
-        <td>${campos[c]}</td>
+        <td>${campoEscolhido}</td>
         <td>${jogo[0]}</td>
-        <td><input type="number" id="a${gameIndex}" style="width:50px" oninput="guardarResultados()"></td>
-        <td><input type="number" id="b${gameIndex}" style="width:50px" oninput="guardarResultados()"></td>
+        <td><input type="number" id="a${jogos.length-1}" style="width:50px" oninput="guardarResultados()"></td>
+        <td><input type="number" id="b${jogos.length-1}" style="width:50px" oninput="guardarResultados()"></td>
         <td>${jogo[1]}</td>
       `;
       table.appendChild(row);
-
-      gameIndex++;
-    }
+    });
 
     gamesDiv.appendChild(table);
-  }
+  });
 
   // salvar jogos no localStorage
   localStorage.setItem("jogos", JSON.stringify(jogos));
 }
+
+
+
 
 function guardarEquipas() {
   let equipas = [];
