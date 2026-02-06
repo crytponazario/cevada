@@ -107,35 +107,41 @@
       margin-bottom: 15px;
     }
   }
-  .session {
+.session {
   font-size: 14px;
   color: #d29a2a;
   margin-top: 5px;
   font-weight: 600;
 }
 // Função para ler query params
+// ===== Função para ler parâmetros da URL =====
 function getQueryParam(name) {
   const urlParams = new URLSearchParams(window.location.search);
   return urlParams.get(name);
 }
 
-// Tenta pegar da URL
-let sessionIdFromUrl = getQueryParam("session");
-
-// Se não houver na URL, pega do localStorage ou cria novo
+// ===== Inicialização do sessionId =====
+let sessionIdFromUrl = getQueryParam("session"); // tenta ler da URL
 let sessionId = sessionIdFromUrl || localStorage.getItem("sessionId");
 
 if (!sessionId) {
+  // gera um sessionId aleatório
   sessionId = 'sess-' + Math.random().toString(36).substr(2, 9);
 }
 
-// Salva no localStorage
+// salva no localStorage
 localStorage.setItem("sessionId", sessionId);
 
-// Mostra no título
+// mostra no título
 document.getElementById("sessionDisplay").textContent = `Session: ${sessionId}`;
 
-console.log("Session ID:", sessionId);
+// ===== Colocar a data de hoje =====
+const hoje = new Date();
+const dia = String(hoje.getDate()).padStart(2, '0');
+const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+const ano = hoje.getFullYear();
+document.getElementById("dataHoje").textContent = `${dia}-${mes}-${ano}`;
+
 </style>
 </head>
 <body>
