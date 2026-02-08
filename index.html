@@ -116,6 +116,23 @@
   align-items: center;
   gap: 5px;
 }
+.session-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.session-controls button {
+  background: #6b3e26;
+  color: #fff;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 13px;
+}
+
 #copySession {
   font-size: 16px;
   vertical-align: middle;
@@ -155,7 +172,11 @@ document.getElementById("dataHoje").textContent = `${dia}-${mes}-${ano}`;
 <body>
 <h1 class="titulo">
   Mix Cevada <span>By GOAT</span> - <span id="dataHoje"></span>
+<div>
+ <button onclick="novaSessao()">➕ Nova Sessão</button>
+ </div>
   <div id="sessionDisplay" class="session">
+  
   Session: <span id="sessionIdText"></span>
   <button id="copySession" title="Copiar URL" style="border:none; background:none; cursor:pointer;">📋</button>
 </div>
@@ -192,7 +213,7 @@ document.getElementById("dataHoje").textContent = `${dia}-${mes}-${ano}`;
 </table>
 
 <button onclick="calcular()">📊 Calcular Classificação</button>
-
+ 
 <h2>Classificação Final</h2>
 <table id="ranking">
 <tr>
@@ -208,35 +229,71 @@ function shuffle(arr) {
   return arr.sort(() => Math.random() - 0.5);
 }
 
-function sorteio() {
-  const campos = ["Bar", "Meio", "Ponta"];
 
-  // Atualiza os nomes das equipas com Jogador1 - Jogador2
-  teams = [];
-  for (let i = 0; i < 6; i++) {
-    const j1 = document.getElementById(`j${i}_1`).value || `Jogador1_${i+1}`;
-    const j2 = document.getElementById(`j${i}_2`).value || `Jogador2_${i+1}`;
-    teams.push(`${j1} - ${j2}`);
+function novaSessao() {
+  if (!confirm("Criar nova sessão? Todos os dados atuais serão apagados.")) return;
+
+  // gerar novo sessionId
+  const novoSessionId = crypto.randomUUID();
+
+  // guardar no localStorage
+  localStorage.clear();
+  localStorage.setItem("sessionId", novoSessionId);
+
+  // atualizar variável global (se existir)
+  sessionId = novoSessionId;
+
+  // atualizar texto no ecrã
+  const sessionTextEl = document.getElementById("sessionText");
+  if (sessionTextEl) {
+    sessionTextEl.textContent = `Sessão: ${novoSessionId}`;
   }
 
-  jogos = []; // reinicia os jogos
+  // limpar ecrã
+  document.getElementById("games").innerHTML = "";
+  document.getElementById("ranking").innerHTML = "";
 
-  // Round-robin fixo para 6 equipas
+  // limpar inputs dos jogadores
+  for (let i = 0; i < 6; i++) {
+    document.getElementById(`j${i}_1`).value = "";
+    document.getElementById(`j${i}_2`).value = "";
+  }
+}
+
+function sorteio() {
+	
+
+  const camposBase = ["Bar", "Meio", "Ponta"];
+
+  // Nomes das equipas
+  teams = [];
+for (let i = 0; i < 6; i++) {
+  const j1 = document.getElementById(`j${i}_1`).value || `Jogador1_${i+1}`;
+  const j2 = document.getElementById(`j${i}_2`).value || `Jogador2_${i+1}`;
+  teams.push(`${j1} - ${j2}`);
+}
+
+// 🔥 NOVO: baralhar a ordem das equipas
+teams = shuffle(teams);
+
+
+  jogos = [];
+
+  // Round-robin FIXO → garante todos contra todos
   const jornadas = [
-    [[0,1],[2,3],[4,5]], // Jornada 1
-    [[0,2],[1,5],[3,4]], // Jornada 2
-    [[0,3],[1,2],[4,5]], // Jornada 3
-    [[0,4],[1,3],[2,5]], // Jornada 4
-    [[0,5],[1,4],[2,3]], // Jornada 5
+    [[0,1],[2,3],[4,5]],
+    [[0,2],[1,4],[3,5]],
+    [[0,3],[1,5],[2,4]],
+    [[0,4],[1,3],[2,5]],
+    [[0,5],[1,2],[3,4]],
   ];
 
   const gamesDiv = document.getElementById("games");
   gamesDiv.innerHTML = "";
 
-  // controlar campos usados por cada equipe
-  let equipeCampos = Array.from({length:6}, ()=> new Set());
+  let gameIndex = 0;
 
-  jornadas.forEach((jornada, roundIndex) => {
+jornadas.forEach((jornada, roundIndex) => {
     const roundTitle = document.createElement("h2");
     roundTitle.textContent = `Jornada ${roundIndex + 1}`;
     roundTitle.style.color = "#6b3e26";
@@ -253,49 +310,47 @@ function sorteio() {
       </tr>
     `;
 
-    // embaralhar ordem dos jogos na jornada
-    const shuffledJornada = jornada.sort(() => Math.random() - 0.5);
+    const campos = shuffle([...camposBase]);
 
-    shuffledJornada.forEach((par, i) => {
-      let jogo = [teams[par[0]], teams[par[1]]];
+    // 1. Mapear os dados para um array temporário que associa o par ao seu campo
+    const jogosComCampo = jornada.map((par, i) => ({
+        par,
+        campo: campos[i]
+    }));
 
-      // aleatoriamente trocar Equipa 1 e 2
-      if (Math.random() > 0.5) jogo = [jogo[1], jogo[0]];
+    // 2. Ordenar esse array pelo nome do campo
+    jogosComCampo.sort((a, b) => a.campo.localeCompare(b.campo));
 
-      // escolher campo garantindo que cada equipe jogue pelo menos uma vez em cada campo
-      let campoEscolhido;
-      for (let c of campos.sort(() => Math.random() - 0.5)) {
-        if (!equipeCampos[par[0]].has(c) && !equipeCampos[par[1]].has(c)) {
-          campoEscolhido = c;
-          equipeCampos[par[0]].add(c);
-          equipeCampos[par[1]].add(c);
-          break;
-        }
-      }
-      if (!campoEscolhido) {
-        // se todas já jogaram, escolhe aleatoriamente
-        campoEscolhido = campos[Math.floor(Math.random()*campos.length)];
+    // 3. Iterar sobre o array já ordenado
+    jogosComCampo.forEach((item) => {
+      let equipaA = teams[item.par[0]];
+      let equipaB = teams[item.par[1]];
+
+      if (Math.random() > 0.5) {
+        [equipaA, equipaB] = [equipaB, equipaA];
       }
 
-      jogos.push(jogo);
+      jogos.push([equipaA, equipaB]);
 
       const row = document.createElement("tr");
       row.innerHTML = `
-        <td>${campoEscolhido}</td>
-        <td>${jogo[0]}</td>
-        <td><input type="number" id="a${jogos.length-1}" style="width:50px" oninput="guardarResultados()"></td>
-        <td><input type="number" id="b${jogos.length-1}" style="width:50px" oninput="guardarResultados()"></td>
-        <td>${jogo[1]}</td>
+        <td>${item.campo}</td>
+        <td>${equipaA}</td>
+        <td><input type="number" id="a${gameIndex}" style="width:50px" oninput="guardarResultados()"></td>
+        <td><input type="number" id="b${gameIndex}" style="width:50px" oninput="guardarResultados()"></td>
+        <td>${equipaB}</td>
       `;
       table.appendChild(row);
+
+      gameIndex++;
     });
 
     gamesDiv.appendChild(table);
-  });
+});
 
-  // salvar jogos no localStorage
   localStorage.setItem("jogos", JSON.stringify(jogos));
 }
+
 
 
 
@@ -449,3 +504,4 @@ console.log("Session ID:", sessionId); // para debug
 
 </body>
 </html>
+
